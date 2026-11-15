@@ -54,8 +54,8 @@ O objetivo é desenvolver uma solução embarcada integrada, capaz de controlar 
 
 ### Etapa 1: Diagramas em Bloco e Esquemático 
 
-- ⚙️ **Diagrama em Blocos:** [`Diagrama em Blocos`](./doc)
-- 💻 **Diagrama Esquemático:** [`Diagrama Esquemático`](./doc)
+- ⚙️ **Diagrama em Blocos:** [`Diagrama em Blocos`](.\doc\Diagrama_Bloco.png)
+- 💻 **Diagrama Esquemático:** [`Diagrama Esquemático`](.\doc\Diagrama_Esquematico.png)
 
 
 <p align="center">
