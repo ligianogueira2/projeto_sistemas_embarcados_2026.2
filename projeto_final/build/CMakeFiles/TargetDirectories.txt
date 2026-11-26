@@ -1130,6 +1130,13 @@
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/espressif__led_strip/CMakeFiles/install.dir
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/espressif__led_strip/CMakeFiles/install/local.dir
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/espressif__led_strip/CMakeFiles/install/strip.dir
+/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/CMakeFiles/__idf_pkolt__vl53l0x.dir
+/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/CMakeFiles/edit_cache.dir
+/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/CMakeFiles/rebuild_cache.dir
+/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/CMakeFiles/list_install_components.dir
+/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/CMakeFiles/install.dir
+/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/CMakeFiles/install/local.dir
+/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/CMakeFiles/install/strip.dir
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/main/CMakeFiles/__idf_main.dir
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/main/CMakeFiles/edit_cache.dir
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/main/CMakeFiles/rebuild_cache.dir

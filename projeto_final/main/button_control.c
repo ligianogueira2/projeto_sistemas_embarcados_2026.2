@@ -295,12 +295,15 @@ void button_control_notify_op_finished(magnibot_state_t completed_state)
     cur = s_state;
     taskEXIT_CRITICAL(&s_state_mux);
 
-    if (emerg) {
+    if (emerg) 
+	{
         return;
     }
-    if (completed_state == ESTADO_2_VARREDURA && cur == ESTADO_2_VARREDURA) {
+    if (completed_state == ESTADO_2_VARREDURA && cur == ESTADO_2_VARREDURA) 
+	{
         set_state_internal(ESTADO_3_MAPEAMENTO_CONCLUIDO);
-    } else if (completed_state == ESTADO_4_CAPTURA_DEPOSITO && cur == ESTADO_4_CAPTURA_DEPOSITO) {
+    } else if (completed_state == ESTADO_4_CAPTURA_DEPOSITO && cur == ESTADO_4_CAPTURA_DEPOSITO) 
+	{
         set_state_internal(ESTADO_1_IDLE);
     }
 }
@@ -312,7 +315,8 @@ void button_control_clear_emergency(void)
     s_state = ESTADO_1_IDLE;
     taskEXIT_CRITICAL(&s_state_mux);
 
-    if (s_cbs.on_state_change != NULL) {
+    if (s_cbs.on_state_change != NULL) 
+	{
         s_cbs.on_state_change(ESTADO_EMERGENCIA, ESTADO_1_IDLE);
     }
 }

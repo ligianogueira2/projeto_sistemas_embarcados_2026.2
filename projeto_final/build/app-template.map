@@ -18517,6 +18517,7 @@ LOAD esp-idf/perfmon/libperfmon.a
 LOAD esp-idf/rt/librt.a
 LOAD esp-idf/spiffs/libspiffs.a
 LOAD esp-idf/espressif__led_strip/libespressif__led_strip.a
+LOAD esp-idf/pkolt__vl53l0x/libpkolt__vl53l0x.a
 LOAD esp-idf/main/libmain.a
 LOAD esp-idf/unity/libunity.a
 LOAD esp-idf/esp_hal_cam/libesp_hal_cam.a
@@ -18524,7 +18525,6 @@ LOAD esp-idf/esp_hal_ledc/libesp_hal_ledc.a
 LOAD esp-idf/esp_hal_mcpwm/libesp_hal_mcpwm.a
 LOAD esp-idf/esp_hal_pcnt/libesp_hal_pcnt.a
 LOAD esp-idf/esp_hal_twai/libesp_hal_twai.a
-LOAD esp-idf/esp_driver_i2c/libesp_driver_i2c.a
 LOAD esp-idf/esp_hal_lcd/libesp_hal_lcd.a
 LOAD esp-idf/esp_https_server/libesp_https_server.a
 LOAD esp-idf/protocomm/libprotocomm.a
@@ -18540,6 +18540,8 @@ LOAD esp-idf/espressif__led_strip/libespressif__led_strip.a
 LOAD esp-idf/esp_driver_spi/libesp_driver_spi.a
 LOAD esp-idf/esp_driver_rmt/libesp_driver_rmt.a
 LOAD esp-idf/esp_hal_rmt/libesp_hal_rmt.a
+LOAD esp-idf/pkolt__vl53l0x/libpkolt__vl53l0x.a
+LOAD esp-idf/esp_driver_i2c/libesp_driver_i2c.a
 LOAD esp-idf/xtensa/libxtensa.a
 LOAD esp-idf/esp_stdio/libesp_stdio.a
 LOAD esp-idf/esp_hal_dma/libesp_hal_dma.a

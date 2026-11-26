@@ -6,6 +6,7 @@ idf_component_register(
         "main.c"
         "button_control.c"
         "led_control.c"
+		"tof_control.h" 
     INCLUDE_DIRS
         "."
     REQUIRES
