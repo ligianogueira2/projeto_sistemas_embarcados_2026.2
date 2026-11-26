@@ -1,0 +1,2 @@
+source /home/agatha/Documents/esp-ide/projeto_final/build/gdbinit/symbols
+source /home/agatha/Documents/esp-ide/projeto_final/build/gdbinit/connect
