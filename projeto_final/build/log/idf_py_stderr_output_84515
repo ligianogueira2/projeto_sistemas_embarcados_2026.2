@@ -1,0 +1,12 @@
+Command: ninja flash
+
+A fatal error occurred: Could not open /dev/ttyACM0, the port is busy or doesn't exist.
+([Errno 11] Could not exclusively lock port /dev/ttyACM0: [Errno 11] Resource temporarily unavailable)
+
+CMake Error at /home/agatha/.espressif/v6.0.2/esp-idf/components/esptool_py/run_serial_tool.cmake:67 (message):
+  
+  /home/agatha/.espressif/tools/python/v6.0.2/venv/bin/python;-m;esptool;--chip;esp32s3
+  failed.
+
+
+
