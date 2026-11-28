@@ -206,5 +206,6 @@
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/esp_driver_rmt/libesp_driver_rmt.a
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/libpkolt__vl53l0x.a
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/main/libmain.a
+/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/esp_driver_ledc/libesp_driver_ledc.a
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/espressif__led_strip/libespressif__led_strip.a
 /home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/pkolt__vl53l0x/libpkolt__vl53l0x.a

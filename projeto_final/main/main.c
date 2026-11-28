@@ -5,15 +5,12 @@
 #include "button_control.h"
 #include "led_control.h"
 #include "tof_control.h"
+#include "arm_control.h"
 
-static const char *TAG = "MAIN_TEST";
+static const char *TAG = "MAIN_APP";
 
-/* Parâmetros da varredura e calibração do sensor na ponta da garra */
-#define SCAN_ANGLE_MIN_DEG      0.0f
-#define SCAN_ANGLE_MAX_DEG      180.0f
-#define SCAN_STEP_DEG           2.0f
-#define SCAN_STEP_DELAY_MS      50
-#define TOF_ANGLE_OFFSET_DEG    0.0f  // Ajuste fino entre a lente do VL53L0X e o centro da garra
+/* Tempo de estabilização mecânica antes de disparar a leitura do VL53L0X */
+#define SCAN_SETTLE_DELAY_MS    40
 
 static volatile bool s_emergency_logged = false;
 static volatile bool s_emergency_pending_print = false;
@@ -32,59 +29,16 @@ static const char *state_to_str(magnibot_state_t st)
 }
 
 /* =========================================================================
- * Stubs de movimentação física (substituir pelas chamadas reais dos servos)
- * ========================================================================= */
-static void arm_move_to_idle_pose(void)
-{
-    ESP_LOGI(TAG, "[BRAÇO] Indo para posição IDLE (braço recolhido / garra aberta).");
-    // Futuro: servo_claw_open(); servo_arm_up(); servo_base_set_angle(90.0f);
-    vTaskDelay(pdMS_TO_TICKS(500));
-}
-
-static void arm_move_to_scan_pose(void)
-{
-    ESP_LOGI(TAG, "[BRAÇO] Descendo garra para altura de varredura e indo para %.1f°.", SCAN_ANGLE_MIN_DEG);
-    // Futuro: servo_base_set_angle(SCAN_ANGLE_MIN_DEG); servo_arm_down_scan();
-    vTaskDelay(pdMS_TO_TICKS(500));
-}
-
-static void arm_base_set_angle(float angle_deg)
-{
-    (void)angle_deg;
-    // Futuro: servo_base_set_angle(angle_deg);
-}
-
-static void arm_pick_at_target(float angle_deg, uint16_t distance_mm)
-{
-    float target_angle = angle_deg + TOF_ANGLE_OFFSET_DEG;
-    if (target_angle < SCAN_ANGLE_MIN_DEG) target_angle = SCAN_ANGLE_MIN_DEG;
-    if (target_angle > SCAN_ANGLE_MAX_DEG) target_angle = SCAN_ANGLE_MAX_DEG;
-
-    ESP_LOGI(TAG, "[BRAÇO] Girando base para %.1f° (alvo=%.1f°, offset=%.1f°, dist=%u mm)...",
-             target_angle, angle_deg, TOF_ANGLE_OFFSET_DEG, distance_mm);
-    arm_base_set_angle(target_angle);
-    vTaskDelay(pdMS_TO_TICKS(500));
-
-    if (button_control_get_state() == ESTADO_EMERGENCIA) return;
-
-    ESP_LOGI(TAG, "[BRAÇO] Descendo garra e fechando para capturar objeto...");
-    // Futuro: servo_arm_reach(distance_mm); servo_claw_close();
-    vTaskDelay(pdMS_TO_TICKS(800));
-
-    if (button_control_get_state() == ESTADO_EMERGENCIA) return;
-
-    ESP_LOGI(TAG, "[BRAÇO] Objeto capturado! Subindo braço...");
-    // Futuro: servo_arm_up();
-    vTaskDelay(pdMS_TO_TICKS(500));
-}
-
-/* =========================================================================
  * Callbacks do controle de botões
  * ========================================================================= */
 static void on_state_change(magnibot_state_t prev, magnibot_state_t next)
 {
     ESP_LOGI(TAG, "[ESTADO/LED] %s -> %s", state_to_str(prev), state_to_str(next));
     ESP_ERROR_CHECK(led_control_apply_state(next));
+
+    if (next == ESTADO_1_IDLE) {
+        s_emergency_logged = false;
+    }
 }
 
 static void on_op_trigger(magnibot_state_t target_state, bool discard_previous)
@@ -93,18 +47,17 @@ static void on_op_trigger(magnibot_state_t target_state, bool discard_previous)
              state_to_str(target_state),
              discard_previous ? "true" : "false");
 
-    if (discard_previous) 
-	{
+    if (discard_previous) {
         ESP_LOGI(TAG, "[OP] Descartando alvo anterior conforme solicitado (toque longo).");
         tof_scanner_reset_target();
     }
 
-    if (s_op_task_handle != NULL) 
-	{
+    if (s_op_task_handle != NULL) {
         xTaskNotify(s_op_task_handle, (uint32_t)target_state, eSetValueWithOverwrite);
     }
 }
 
+/* Executado dentro da ISR do Botão 2: apenas sinaliza a flag para a task principal */
 static void on_emergency(void)
 {
     s_emergency_pending_print = true;
@@ -118,69 +71,64 @@ static void magnibot_op_task(void *pvParameters)
     (void)pvParameters;
     uint32_t notified_state = 0;
 
-    while (true) 
-	{
+    while (true) {
         if (xTaskNotifyWait(0, UINT32_MAX, &notified_state, portMAX_DELAY) != pdTRUE) {
             continue;
         }
 
         magnibot_state_t op = (magnibot_state_t)notified_state;
 
-        if (op == ESTADO_2_VARREDURA) 
-		{
+        if (op == ESTADO_2_VARREDURA) {
             tof_scanner_reset_target();
             bool found = false;
 
-            /* 1. Desce a garra para a posição de varredura */
+            /* 1. Desce a garra para a altura de varredura e vai para -90° */
             arm_move_to_scan_pose();
 
-            /* 2. Varre de 0° a 180° lendo o VL53L0X */
-            ESP_LOGI(TAG, "[VARREDURA] Iniciando busca angular (%.1f° a %.1f°)...",
-                     SCAN_ANGLE_MIN_DEG, SCAN_ANGLE_MAX_DEG);
+            /* 2. Varre 180° (-90° a +90°) lendo o VL53L0X a cada passo */
+            ESP_LOGI(TAG, "[VARREDURA] Iniciando busca angular (%.1f° a %.1f°, passo=%.1f°)...",
+                     ARM_SCAN_MIN_DEG, ARM_SCAN_MAX_DEG, ARM_SCAN_STEP_DEG);
 
-            for (float ang = SCAN_ANGLE_MIN_DEG; ang <= SCAN_ANGLE_MAX_DEG; ang += SCAN_STEP_DEG) 
-			{
-                if (button_control_get_state() == ESTADO_EMERGENCIA) 
-				{
-                    ESP_LOGW(TAG, "[VARREDURA] Abortada por emergência!");
+            uint16_t step_idx = 0;
+            for (float ang = ARM_SCAN_MIN_DEG; ang <= ARM_SCAN_MAX_DEG; ang += ARM_SCAN_STEP_DEG) {
+                if (button_control_get_state() == ESTADO_EMERGENCIA) {
+                    ESP_LOGW(TAG, "[VARREDURA] Abortada por emergência no passo %u (%.1f°)!", step_idx, ang);
                     break;
                 }
 
-                arm_base_set_angle(ang);
-                vTaskDelay(pdMS_TO_TICKS(SCAN_STEP_DELAY_MS));
+                step_idx++;
+                ESP_LOGD(TAG, "[VARREDURA] Passo %u -> movendo base para %.1f°", step_idx, ang);
+                arm_base_goto_angle(ang);
+                vTaskDelay(pdMS_TO_TICKS(SCAN_SETTLE_DELAY_MS));
 
-                if (tof_scanner_poll_at_angle(ang)) 
-				{
+                if (tof_scanner_poll_at_angle(ang)) {
                     found = true;
+                    ESP_LOGI(TAG, "[VARREDURA] Alvo confirmado no passo %u! Encerrando varredura.", step_idx);
                     break;
                 }
             }
 
             /* 3. Retorna fisicamente para IDLE e entra no Estado 3 (aguardando confirmação) */
-            if (button_control_get_state() != ESTADO_EMERGENCIA) 
-			{
-                if (!found) 
-				{
-                    ESP_LOGW(TAG, "[VARREDURA] Fim do curso sem detectar objeto na faixa.");
+            if (button_control_get_state() != ESTADO_EMERGENCIA) {
+                if (!found) {
+                    ESP_LOGW(TAG, "[VARREDURA] Fim do curso (%u passos) sem detectar objeto na faixa.", step_idx);
                 }
                 arm_move_to_idle_pose();
                 button_control_notify_op_finished(ESTADO_2_VARREDURA);
             }
         }
-        else if (op == ESTADO_4_CAPTURA_DEPOSITO)
-		{
+        else if (op == ESTADO_4_CAPTURA_DEPOSITO) {
             tof_target_t alvo = tof_scanner_get_target();
 
-            if (!alvo.found) 
-			{
+            if (!alvo.found) {
                 ESP_LOGW(TAG, "[CAPTURA] Nenhum objeto mapeado! Retornando para IDLE.");
-            } else 
-			{
+            } else {
+                ESP_LOGI(TAG, "[CAPTURA] Executando captura em %.1f° (distancia=%u mm)...",
+                         alvo.angle_deg, alvo.distance_mm);
                 arm_pick_at_target(alvo.angle_deg, alvo.distance_mm);
             }
 
-            if (button_control_get_state() != ESTADO_EMERGENCIA) 
-			{
+            if (button_control_get_state() != ESTADO_EMERGENCIA) {
                 arm_move_to_idle_pose();
                 tof_scanner_reset_target();
                 button_control_notify_op_finished(ESTADO_4_CAPTURA_DEPOSITO);
@@ -191,17 +139,36 @@ static void magnibot_op_task(void *pvParameters)
 
 void app_main(void)
 {
-    /* 1. Inicializa o LED */
+    /* 0. Ativa logs detalhados de depuração */
+    esp_log_level_set("TOF_SCAN", ESP_LOG_DEBUG);
+    esp_log_level_set("ARM_CTRL", ESP_LOG_DEBUG);
+    esp_log_level_set("SERVO360", ESP_LOG_DEBUG);
+    esp_log_level_set("BTN_CTRL", ESP_LOG_DEBUG);
+    esp_log_level_set("MAIN_APP", ESP_LOG_DEBUG);
+
+    ESP_LOGI(TAG, "==========================================================");
+    ESP_LOGI(TAG, " MagniBot ESP32-S3 | Boot e Diagnostico de Hardware");
+    ESP_LOGI(TAG, " Pinos: Base360=16 | Ombro=17 | Cotov=18 | Rot=8 | Flex=3 | Garra=10");
+    ESP_LOGI(TAG, "        I2C(VL53L0X): SDA=12, SCL=13 | LED=38 | BTN1=1 | BTN2=2");
+    ESP_LOGI(TAG, "==========================================================");
+
+    /* 1. Inicializa o LED RGB onboard (GPIO 38) */
     ESP_ERROR_CHECK(led_control_init());
 
-    /* 2. Inicializa o sensor VL53L0X */
-    ESP_ERROR_CHECK(tof_scanner_init());
+    /* 2. Inicializa o sensor VL53L0X (SDA=12, SCL=13) sem abortar em caso de mau contato */
+    esp_err_t tof_err = tof_scanner_init();
+    if (tof_err != ESP_OK) {
+        ESP_LOGW(TAG, "VL53L0X indisponivel no boot (%s). Servos e botoes seguem ativos; sensor tentara reconectar na varredura.",
+                 esp_err_to_name(tof_err));
+    }
+
+    /* Descomente abaixo para restringir a detecção entre 40 mm e 250 mm na bancada: */
     // tof_scanner_set_range_mm(40, 250);
 
-    /* 3. Posiciona fisicamente o braço em IDLE no boot */
-    arm_move_to_idle_pose();
+    /* 3. Inicializa os 6 servomotores e posiciona o braço em IDLE */
+    ESP_ERROR_CHECK(arm_control_init());
 
-    /* 4. Cria a task de operação */
+    /* 4. Cria a task de operação dos movimentos */
     xTaskCreate(magnibot_op_task, "magnibot_op", 4096, NULL, 5, &s_op_task_handle);
 
     button_control_callbacks_t cbs = {
@@ -210,17 +177,19 @@ void app_main(void)
         .on_emergency    = on_emergency,
     };
 
-    /* 5. Inicializa os botões */
+    /* 5. Inicializa os botões (BTN1=GPIO1, BTN2=GPIO2) */
     ESP_ERROR_CHECK(button_control_init(&cbs));
 
-    while (true) 
-	{
-        if (s_emergency_pending_print && !s_emergency_logged) 
-		{
+    ESP_LOGI(TAG, "Sistema pronto em ESTADO_1_IDLE (VL53L0X=%s).",
+             (tof_err == ESP_OK) ? "OK" : "FALHA/MAU CONTATO");
+
+    while (true) {
+        if (s_emergency_pending_print && !s_emergency_logged) {
             s_emergency_pending_print = false;
             s_emergency_logged = true;
-            ESP_LOGE(TAG, "[EMERGÊNCIA] Parar PWM e levar servos para posição segura!");
+            arm_emergency_stop();
+            ESP_LOGE(TAG, "[EMERGÊNCIA] Base parada e sistema bloqueado!");
         }
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }

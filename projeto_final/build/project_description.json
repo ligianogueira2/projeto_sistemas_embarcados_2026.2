@@ -1775,12 +1775,12 @@
             "dir": "/home/agatha/Documents/esp-ide/projeto_final/main",
             "type": "LIBRARY",
             "lib": "__idf_main",
-            "reqs": [ "esp_driver_gpio", "esp_timer", "freertos", "esp_common", "espressif__led_strip" ],
+            "reqs": [ "esp_driver_gpio", "esp_driver_i2c", "esp_driver_ledc", "esp_timer", "espressif__led_strip", "pkolt__vl53l0x" ],
             "priv_reqs": [ "espressif__led_strip", "pkolt__vl53l0x" ],
             "managed_reqs": [],
             "managed_priv_reqs": [ "espressif__led_strip", "pkolt__vl53l0x" ],
             "file": "/home/agatha/Documents/esp-ide/projeto_final/build/esp-idf/main/libmain.a",
-            "sources": [ "/home/agatha/Documents/esp-ide/projeto_final/main/main.c", "/home/agatha/Documents/esp-ide/projeto_final/main/button_control.c", "/home/agatha/Documents/esp-ide/projeto_final/main/led_control.c", "/home/agatha/Documents/esp-ide/projeto_final/main/tof_control.h" ],
+            "sources": [ "/home/agatha/Documents/esp-ide/projeto_final/main/main.c", "/home/agatha/Documents/esp-ide/projeto_final/main/button_control.c", "/home/agatha/Documents/esp-ide/projeto_final/main/led_control.c", "/home/agatha/Documents/esp-ide/projeto_final/main/tof_control.c", "/home/agatha/Documents/esp-ide/projeto_final/main/servo.c", "/home/agatha/Documents/esp-ide/projeto_final/main/servo_config.c", "/home/agatha/Documents/esp-ide/projeto_final/main/servo360.c", "/home/agatha/Documents/esp-ide/projeto_final/main/arm_control.c" ],
             "include_dirs": [ "." ]
         },
         "mbedtls": {
@@ -3929,7 +3929,7 @@
             "dir": "/home/agatha/Documents/esp-ide/projeto_final/main",
             "source": "project_components",
             "lib": "__idf_main",
-            "reqs": [ "esp_driver_gpio", "esp_timer", "freertos", "esp_common", "espressif__led_strip" ],
+            "reqs": [ "esp_driver_gpio", "esp_driver_i2c", "esp_driver_ledc", "esp_timer", "espressif__led_strip", "pkolt__vl53l0x" ],
             "priv_reqs": [ "espressif__led_strip", "pkolt__vl53l0x" ],
             "managed_reqs": [],
             "managed_priv_reqs": [ "espressif__led_strip", "pkolt__vl53l0x" ],

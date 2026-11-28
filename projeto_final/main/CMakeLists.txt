@@ -1,18 +1,20 @@
-# See the build system documentation in IDF programming guide
-# for more information about component CMakeLists.txt files.
-
 idf_component_register(
     SRCS
         "main.c"
         "button_control.c"
         "led_control.c"
-		"tof_control.h" 
+        "tof_control.c"
+        "servo.c"
+        "servo_config.c"
+        "servo360.c"
+        "arm_control.c"
     INCLUDE_DIRS
         "."
     REQUIRES
         esp_driver_gpio
+        esp_driver_i2c
+        esp_driver_ledc
         esp_timer
-        freertos
-        esp_common
         led_strip
+        vl53l0x
 )
